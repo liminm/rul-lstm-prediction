@@ -5,7 +5,8 @@ import torch
 from pydantic import BaseModel, Field
 import pandas as pd
 from contextlib import asynccontextmanager
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, Request, Query, HTTPException
+from typing import Optional
 
 from model import EngineRULPredictor
 import joblib
@@ -70,6 +71,12 @@ async def lifespan(app: FastAPI):
     
     app.state.scaler = joblib.load('models/scaler.pkl') # <--- 2. Load the scaler
 
+    col_names = ['unit_nr', 'time_cycles',
+                 'setting_1', 'setting_2', 'setting_3'] + [f"s_{i}" for i in range(1, 22)]
+    raw_df = pd.read_csv("data/train_FD001.txt", sep=r"\s+", header=None, names=col_names)
+    app.state.sensor_df = raw_df
+
+
     yield  # This separates startup from shutdown
     
     # 2. Shutdown logic goes here
@@ -132,3 +139,23 @@ async def predict_rul(request: Request):
     #rul_prediction = prediction.item()
     
     return {"predicted_rul": scaled_prediction}
+
+
+@app.get("/sensors/", response_model=List[EngineData])
+async def list_sensors(
+    request: Request,
+    limit: int = Query(50, gt=0, le=500),
+    unit_nr: Optional[int] = None,
+    start_cycle: Optional[int] = Query(None, ge=0),
+    end_cycle: Optional[int] = Query(None, ge=0),
+):
+    df = request.app.state.sensor_df
+    if unit_nr is not None:
+        df = df[df["unit_nr"] == unit_nr]
+    if start_cycle is not None and end_cycle is not None and end_cycle < start_cycle:
+        raise HTTPException(status_code=400, detail="end_cycle must be >= start_cycle")
+    if start_cycle is not None:
+        df = df[df["time_cycles"] >= start_cycle]
+    if end_cycle is not None:
+        df = df[df["time_cycles"] <= end_cycle]
+    return df.head(limit).to_dict(orient="records")
