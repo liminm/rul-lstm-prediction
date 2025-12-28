@@ -1,37 +1,84 @@
 import { useState, useEffect } from 'react'
 import SensorDisplay from './components/SensorDisplay'
 
+  const SENSOR_NAMES = {
+    s_1: "Fan Inlet Temp",
+    s_2: "LPC Outlet Temp",
+    s_3: "HPC Outlet Temp",
+    s_4: "LPT Outlet Temp",
+    s_5: "Fan Inlet Pressure",
+    s_6: "Bypass Duct Press",
+    s_7: "HPC Outlet Press",
+    s_8: "Phys Fan Speed",
+    s_9: "Phys Core Speed",
+    s_10: "Engine Press Ratio",
+    s_11: "Static HPC Outlet P",
+    s_12: "Fuel Flow Ratio",
+    s_13: "Corr Fan Speed",
+    s_14: "Corr Core Speed",
+    s_15: "Bypass Ratio",
+    s_16: "Burner Burner Ratio",
+    s_17: "Bleed Enthalpy",
+    s_18: "Demanded Fan Speed",
+    s_19: "Demanded Corr Fan Speed",
+    s_20: "HPT Coolant Bleed",
+    s_21: "LPT Coolant Bleed"
+  };
+
+  const SETTING_NAMES = {
+    setting_1: "Altitude",
+    setting_2: "Mach Number",
+    setting_3: "Throttle Resolver Angle"
+  };
+
+  const ALL_SENSOR_NAMES = { ...SENSOR_NAMES, ...SETTING_NAMES };
+
 function App() {
-  const [count, setCount] = useState(0)
+
+  const [windowRange, setWindowRange] = useState({ startIndex: 0, endIndex: 50 });
+
+  const handleBrushChange = (newRange) => {
+      // newRange looks like: { startIndex: 10, endIndex: 60 }
+      // ... logic goes here ...
+      setWindowRange(newRange);
+  }
 
   const fetchData = async () => {
     try {
       console.log("Fetching data from Python...");
       
       // 1. Make the request
-      const response = await fetch("http://127.0.0.1:8001/predict/", {
-        method: "POST", // Your endpoint expects a POST
-        headers: {
-          "Content-Type": "application/json",
-        },
-        // We send an empty body for now since your backend is hardcoded to read the file
-        body: JSON.stringify({}), 
-      });
-      
-      // 2. Parse the JSON answer
-      //const data = await response.json();
+      //const response = await fetch("http://127.0.0.1:8001/sensors/?limit=1");
+      // Inside fetchData
+      const response = await fetch(
+        `http://127.0.0.1:8001/sensors/?start_cycle=${windowRange.startIndex}&end_cycle=${windowRange.endIndex}&limit=500`
+      );
+
+      const data = await response.json();
 
 
-      const data = [
-        { id: 1, label: "Fan Speed", value: 123 },
-        { id: 2, label: "Core Temp", value: 6545 },
-        { id: 3, label: "Oil Pressure", value: 812120 },
-      ]
 
-      console.log("Response received:", data);
-      // 3. Update the state with the prediction
-      // Your API returns { "predicted_rul": 145.3 }
-      setSensors(data);
+
+      const latestReading = data[0]; 
+      console.log("Latest Reading:", latestReading);
+
+      const formattedSensors = Object.keys(ALL_SENSOR_NAMES).map((key, index) => {
+        return {
+          id: index,
+          label: ALL_SENSOR_NAMES[key],
+          history: data.map(row => ({value: row[key] })),
+        };
+      })
+
+     // const formattedSensors = Object.keys(latestReading)
+       //       .filter((key) => key.startsWith('s_')) // Only keep sensor keys
+         //     .map((key, index) => ({
+           //     id: index,
+            //    label: SENSOR_NAMES[key] || key, // Use the nice name, or fallback to 's_1'
+             //   value: latestReading[key] // Get the number (e.g., 518.67)
+             // }));
+
+      setSensors(formattedSensors);
       //setCount(data.predicted_rul);
       
     } catch (error) {
@@ -42,21 +89,16 @@ function App() {
   useEffect(() => {
       // Call the function immediately
       fetchData();
-    }, []);
+    }, [windowRange]);
 
   const [sensors, setSensors] = useState([
-    { id: 1, label: "Fan Speed", value: 2500 },
-    { id: 2, label: "Core Temp", value: 540 },
-    { id: 3, label: "Oil Pressure", value: 80 },
+    { id: 1, label: 'Loading...', value: 0, history: [] }
   ]);
-
-
 
   return (
     <>
       <h1>Engine Dashboard</h1>
       <div className="card">
-        <SensorDisplay value={count} label="Sensor Count" />
         <button onClick={() => fetchData()}>
           Update Sensor
         </button>
@@ -66,7 +108,17 @@ function App() {
       </div>
       {/* 2. Map over the 'sensors' state variable now */}
       {sensors.map((sensor) => (
-        <SensorDisplay value={sensor.value} label={sensor.label} key={sensor.id} />
+        <SensorDisplay 
+          key={sensor.id}
+          label={sensor.label}
+          
+          // Pass the full array for the chart
+          history={sensor.history} 
+          
+          // Pass ONLY the last number for the big text display
+          // We check if history exists to avoid errors during loading
+          value={sensor.history.length > 0 ? sensor.history[sensor.history.length - 1].value : 0} 
+        />
       ))}
     </>
   )
