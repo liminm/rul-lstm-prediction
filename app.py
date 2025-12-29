@@ -144,14 +144,13 @@ async def predict_rul(request: Request):
 @app.get("/sensors/", response_model=List[EngineData])
 async def list_sensors(
     request: Request,
-    limit: int = Query(50, gt=0, le=500),
-    unit_nr: Optional[int] = None,
+    limit: int = Query(50, gt=0, le=1000),
+    unit_nr: int = Query(1, ge=1),
     start_cycle: Optional[int] = Query(None, ge=0),
     end_cycle: Optional[int] = Query(None, ge=0),
 ):
     df = request.app.state.sensor_df
-    if unit_nr is not None:
-        df = df[df["unit_nr"] == unit_nr]
+    df = df[df["unit_nr"] == unit_nr]
     if start_cycle is not None and end_cycle is not None and end_cycle < start_cycle:
         raise HTTPException(status_code=400, detail="end_cycle must be >= start_cycle")
     if start_cycle is not None:
