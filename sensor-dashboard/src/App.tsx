@@ -147,16 +147,22 @@ function App() {
       <h1>Engine Dashboard</h1>
       <div className="card">
         <label>Select Engine: </label>
-        <input 
-          type="number" 
-          value={selectedEngine} 
+        <select
+          value={selectedEngine}
           onChange={(e) => setSelectedEngine(Number(e.target.value))}
           style={{ marginLeft: '10px', padding: '5px' }}
-        />
+        >
+          {availableEngines.map((engineNr) => (
+            <option key={engineNr} value={engineNr}>
+              Engine {engineNr}
+            </option>
+          ))}
+        </select>
+
       </div>
       {/* --- MASTER TIMELINE CONTROL --- */}
             <div className="card" style={{ width: '100%', height: '300px', marginBottom: '20px' }}>
-              <h3>Flight Timeline (Select Range)</h3>
+              <h3>Flight Timeline</h3>
               {fullHistory.length > 0 && (  
               <ResponsiveContainer width="100%" height="100%">
                 <LineChart data={fullHistory}>
@@ -166,18 +172,31 @@ function App() {
                   
                   {/* The Reference Line (Fan Speed) */}
                   <Line type="monotone" dataKey="s_8" stroke="#8884d8" dot={false} />
-                  
-                  {/* The Magic Brush Tool 🖌️ */}
-                  <Brush 
-                      dataKey="time_cycles" 
-                      height={30} 
-                      stroke="#8884d8"
-                      onChange={handleBrushChange} // Connects to your state!
-                  />
+                                    
                 </LineChart>
               </ResponsiveContainer>
               )}
             </div>
+            <div className="card" style={{ width: '100%', height: '300px', marginBottom: '20px' }}>
+              <h3>Flight Timeline 2</h3>
+              {fullHistory.length > 0 && (  
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart data={fullHistory}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="time_cycles" />
+                  <YAxis domain={['auto', 'auto']} />
+                  
+                  {/* The Reference Line (Fan Speed) */}
+                  <Line type="monotone" dataKey="s_1" stroke="#8884d8" dot={false} />
+                                    
+                </LineChart>
+              </ResponsiveContainer>
+              )}
+            </div>
+
+
+
+
             {/* ------------------------------- */}
 
       <div className="card">
