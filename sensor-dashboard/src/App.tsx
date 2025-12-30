@@ -55,10 +55,9 @@ function App() {
       console.log("Fetching data from Python...");
       
       // 1. Make the request
-      //const response = await fetch("http://127.0.0.1:8001/sensors/?limit=1");
       // Inside fetchData
       const response = await fetch(
-        `http://127.0.0.1:8001/sensors/?start_cycle=${windowRange.startIndex}&end_cycle=${windowRange.endIndex}&limit=500`
+        `http://127.0.0.1:8001/sensors/?start_cycle=${windowRange.startIndex}&end_cycle=${windowRange.endIndex}&limit=500&unit_nr=${selectedEngine}`
       );
 
       const data = await response.json();
@@ -96,7 +95,7 @@ function App() {
 
   const fetchFullHistory = async () => {
     try {
-      const response = await fetch("http://127.0.0.1:8001/sensors/?limit=500");  
+      const response = await fetch(`http://127.0.0.1:8001/sensors/?limit=500&unit_nr=${selectedEngine}`);  
       const data = await response.json();
       
       console.log("Full History Data:", data); // <--- Add this!
@@ -111,12 +110,12 @@ function App() {
       // Call the function immediately
       //fetchData();
       fetchFullHistory();
-    }, []);
+    }, [selectedEngine]);
 
   useEffect(() => {
       // Refetch data whenever the windowRange changes
       fetchData();
-    }, [windowRange]);
+    }, [windowRange, selectedEngine]);
 
   const [sensors, setSensors] = useState([
     { id: 1, label: 'Loading...', value: 0, history: [] }
@@ -127,6 +126,15 @@ function App() {
   return (
     <>
       <h1>Engine Dashboard</h1>
+      <div className="card">
+        <label>Select Engine: </label>
+        <input 
+          type="number" 
+          value={selectedEngine} 
+          onChange={(e) => setSelectedEngine(Number(e.target.value))}
+          style={{ marginLeft: '10px', padding: '5px' }}
+        />
+      </div>
       {/* --- MASTER TIMELINE CONTROL --- */}
             <div className="card" style={{ width: '100%', height: '300px', marginBottom: '20px' }}>
               <h3>Flight Timeline (Select Range)</h3>
