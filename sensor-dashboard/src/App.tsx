@@ -134,20 +134,39 @@ function App() {
   return (
     <>
       <h1>Engine Dashboard</h1>
-      <div className="card">
-        <label>Select Engine: </label>
-        <select
-          value={selectedEngine}
-          onChange={(e) => setSelectedEngine(Number(e.target.value))}
-          style={{ marginLeft: '10px', padding: '5px' }}
-        >
-          {availableEngines.map((engineNr) => (
-            <option key={engineNr} value={engineNr}>
-              Engine {engineNr}
-            </option>
-          ))}
-        </select>
+      <div className="card" style={{
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+      }}>
+        <div className="card">
+          <label>Select Engine: </label>
+          <select
+            value={selectedEngine}
+            onChange={(e) => setSelectedEngine(Number(e.target.value))}
+            style={{ marginLeft: '10px', padding: '5px' }}
+          >
+            {availableEngines.map((engineNr) => (
+              <option key={engineNr} value={engineNr}>
+                Engine {engineNr}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <div className="card">
+          <label>Predicted RUL: </label>
+          <span style={{ fontWeight: 'bold', marginLeft: '10px' }}>
+            {rulPrediction !== null ? `${rulPrediction.toFixed(2)} cycles` : 'Loading...'}
+          </span>
+        </div>
       </div>
+
+
+
+
+
+
       <div
         style={{
           display: 'grid',
