@@ -44,6 +44,25 @@ function App() {
 
   const [selectedEngine, setSelectedEngine] = useState(1);
 
+  const [availableEngines, setAvailableEngines] = useState<number[]>([]);
+
+  useEffect(() => {
+    const fetchEngines = async () => {
+      try {
+        const response = await fetch('http://localhost:8001/engines/');
+        const data = await response.json();
+        setAvailableEngines(data);
+        if (data.length > 0) {
+          setSelectedEngine(data[0]); // Set to first engine by default
+        }
+      } catch (error) {
+        console.error('Error fetching engines:', error);
+      }
+    };
+    
+    fetchEngines();
+  }, []);
+
   const handleBrushChange = (newRange) => {
       // newRange looks like: { startIndex: 10, endIndex: 60 }
       // ... logic goes here ...
