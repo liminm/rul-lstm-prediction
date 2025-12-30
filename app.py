@@ -73,7 +73,7 @@ async def lifespan(app: FastAPI):
 
     col_names = ['unit_nr', 'time_cycles',
                  'setting_1', 'setting_2', 'setting_3'] + [f"s_{i}" for i in range(1, 22)]
-    raw_df = pd.read_csv("data/train_FD001.txt", sep=r"\s+", header=None, names=col_names)
+    raw_df = pd.read_csv("data/test_FD001.txt", sep=r"\s+", header=None, names=col_names)
     app.state.sensor_df = raw_df
 
 
