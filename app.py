@@ -197,3 +197,10 @@ async def list_sensors(
     if end_cycle is not None:
         df = df[df["time_cycles"] <= end_cycle]
     return df.head(limit).to_dict(orient="records")
+
+
+@app.get("/engines/", response_model=List[int])
+async def list_engines(request: Request):
+    df = request.app.state.sensor_df
+    engine_ids = df["unit_nr"].unique().tolist()
+    return engine_ids
