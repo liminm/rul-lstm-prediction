@@ -1,8 +1,8 @@
 import { useState, useEffect, use } from 'react'
-import SensorDisplay from './components/SensorDisplay'
 
 
 import { LineChart, Line, XAxis, YAxis, Brush, ResponsiveContainer, CartesianGrid, Tooltip } from 'recharts';
+import Sparkline from './components/Sparkline';
 
   const SENSOR_NAMES = {
     s_1: "Fan Inlet Temp",
@@ -199,28 +199,27 @@ function App() {
 
             {/* ------------------------------- */}
 
-      <div className="card">
-        <button onClick={() => fetchData()}>
-          Update Sensor
-        </button>
-        <p>
-          Edit <code>src/App.tsx</code> and save to test HMR
-        </p>
-      </div>
-      {/* 2. Map over the 'sensors' state variable now */}
-      {sensors.map((sensor) => (
-        <SensorDisplay 
-          key={sensor.id}
-          label={sensor.label}
-          
-          // Pass the full array for the chart
-          history={sensor.history} 
-          
-          // Pass ONLY the last number for the big text display
-          // We check if history exists to avoid errors during loading
-          value={sensor.history.length > 0 ? sensor.history[sensor.history.length - 1].value : 0} 
-        />
-      ))}
+
+            // ... existing code ...
+
+            <div style={{ 
+              display: 'grid', 
+              gridTemplateColumns: 'repeat(4, 1fr)', // Creates 4 equal columns
+              gap: '10px',
+              marginTop: '20px'
+            }}>
+              {sensors.map((sensor) => (
+                
+                // ??? RENDER THE SPARKLINE HERE ???
+                <Sparkline
+                  label={sensor.label}
+                  value={sensor.value}
+                  history={sensor.history}
+                />
+
+              ))}
+            </div>
+
     </>
   )
 }
