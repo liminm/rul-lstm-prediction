@@ -1,4 +1,5 @@
 from typing import List
+import torch
 
 
 from pydantic import BaseModel, Field
@@ -7,6 +8,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI, Request, Query, HTTPException
 from typing import Optional
 
+from model import RulLstm
 import joblib
 from fastapi.middleware.cors import CORSMiddleware
 from pathlib import Path
@@ -70,13 +72,15 @@ async def lifespan(app: FastAPI):
     print("Loading model...")
     input_size = 18 # Sensors (21) + Settings (3)
 
-    #model = RulLstm(n_features=input_size, hidden_size=128, num_layers=2, dropout=0.2)
+    model = RulLstm(n_features=input_size, hidden_size=128, num_layers=2, dropout=0.2)
 
-    #model.load_state_dict(torch.load('models/lstm_model.pth', map_location=torch.device('cpu')))
-    #model.eval()
+    model 
 
-    #app.state.model = model
-    #app.state.model.eval()
+    model.load_state_dict(torch.load('models/lstm_model.pth', map_location=torch.device('cpu')))
+    model.eval()
+
+    app.state.model = model
+    app.state.model.eval()
     
     app.state.scaler = joblib.load('models/scaler.pkl') # <--- 2. Load the scaler
 
@@ -119,6 +123,43 @@ async def spa_fallback(full_path: str):
     raise HTTPException(status_code=404, detail="Frontend not built")
 
 
+@app.post("/predict/")
+async def predict_rul(request: Request, payload: EngineRequest):
+    max_rul = 542  # use the same value you trained with
+
+    index_names = ['unit_nr', 'time_cycles']
+    setting_names = ['setting_1', 'setting_2', 'setting_3']
+    sensor_names = ['s_{}'.format(i) for i in range(1, 22)] 
+    col_names = index_names + setting_names + sensor_names
+    df = pd.read_csv("data/test_FD001.txt", sep="\s+", header=None, names=col_names)
+    df = df[df.unit_nr == payload.unit_nr]
+
+    df = df.drop(columns=["unit_nr", "time_cycles"])  # Drop non-feature columns for scaling
+    scaler = request.app.state.scaler
+    scaled = scaler.transform(df)
+    df = pd.DataFrame(scaled, columns=df.columns, index=df.index)
+
+    features_to_drop = ["s_1", "s_5", "s_10", "s_16", "s_18", "s_19"]
+    df = df.drop(columns=features_to_drop)
+
+    input_tensor = torch.tensor(df.to_numpy(), dtype=torch.float32)
+    input_tensor = input_tensor.unsqueeze(0)  # Add batch dimension
+
+    model = request.app.state.model
+
+    # Perform prediction
+    with torch.no_grad():
+        length = int(input_tensor.shape[0])
+
+        prediction = model(input_tensor, lengths=torch.tensor([length]))
+        print(f"Raw model prediction: {prediction.item()}")
+        scaled_prediction = prediction.item() * max_rul
+    
+    return {"predicted_rul": scaled_prediction,
+            "prediction_raw": prediction.item(),
+            "unit_nr": payload.unit_nr,
+            "data": df.to_dict(orient="records")}
+
 @app.post("/predict_onnx/")
 async def predict_rul_onnx(request: Request, payload: EngineRequest):
     import onnxruntime as ort
@@ -141,19 +182,16 @@ async def predict_rul_onnx(request: Request, payload: EngineRequest):
     features_to_drop = ["s_1", "s_5", "s_10", "s_16", "s_18", "s_19"]
     df = df.drop(columns=features_to_drop)
 
-    input_np = df.to_numpy().astype(np.float32)
-    input_np = np.expand_dims(input_np, axis=0)  # Add batch dimension  
-
-    #input_tensor = torch.tensor(df.to_numpy(), dtype=torch.float32)
-    #input_tensor = input_tensor.unsqueeze(0)  # Add batch dimension
+    input_tensor = torch.tensor(df.to_numpy(), dtype=torch.float32)
+    input_tensor = input_tensor.unsqueeze(0)  # Add batch dimension
 
     # Load ONNX model
     ort_session = ort.InferenceSession("models/lstm_model.onnx", providers=["CPUExecutionProvider"])
 
     # Perform prediction
     inputs = {
-        "input": input_np,
-        "lengths": np.array([input_np.shape[1]], dtype=np.int64)
+        "input": input_tensor.numpy(),
+        "lengths": np.array([input_tensor.shape[1]], dtype=np.int64)
     }
     outputs = ort_session.run(None, inputs)
 
@@ -167,6 +205,50 @@ async def predict_rul_onnx(request: Request, payload: EngineRequest):
         "prediction_raw": prediction,
         "unit_nr": payload.unit_nr,
         "data": df.to_dict(orient="records")}
+
+
+
+@app.post("/predict_old/")
+async def predict_rul_old(request: Request):
+    max_rul = 542  # use the same value you trained with
+
+    index_names = ['unit_nr', 'time_cycles']
+    setting_names = ['setting_1', 'setting_2', 'setting_3']
+    sensor_names = ['s_{}'.format(i) for i in range(1, 22)] 
+    col_names = index_names + setting_names + sensor_names
+    df = pd.read_csv("data/train_FD001.txt", sep="\s+", header=None, names=col_names)
+    df = df.head(50)  # Use only the first 50 rows for prediction
+
+    # Convert payload to DataFrame
+    #df = payload.to_dataframe()
+
+    df = df.drop(columns=["unit_nr", "time_cycles"])  # Drop non-feature columns for scaling
+    
+    #features_to_drop = ['unit_nr', 'time_cycles', "s_1", "s_5", "s_10", "s_16", "s_18", "s_19"]
+    #df = df.drop(columns=features_to_drop)
+    scaler = request.app.state.scaler
+    scaled = scaler.transform(df)
+    df = pd.DataFrame(scaled, columns=df.columns, index=df.index)
+
+    features_to_drop = ["s_1", "s_5", "s_10", "s_16", "s_18", "s_19"]
+    df = df.drop(columns=features_to_drop)
+
+    input_tensor = torch.tensor(df.to_numpy(), dtype=torch.float32)
+    input_tensor = input_tensor.unsqueeze(0)  # Add batch dimension
+
+    model = request.app.state.model
+
+    # Perform prediction
+    with torch.no_grad():
+        prediction = model(input_tensor)
+        #preds_real = prediction.cpu().numpy().flatten() * max_rul
+        print(f"Raw model prediction: {prediction.item()}")
+        scaled_prediction = prediction.item() * max_rul
+
+    # Assuming the model outputs a single RUL value
+    #rul_prediction = prediction.item()
+    
+    return {"predicted_rul": scaled_prediction}
 
 
 @app.get("/sensors/", response_model=List[EngineData])
