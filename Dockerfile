@@ -23,6 +23,6 @@ RUN mkdir -p /app/static
 
 COPY --from=frontend /frontend/dist /app/static
 
-EXPOSE 8001
+EXPOSE 8080
 
-CMD ["uvicorn", "app:app", "--host", "0.0.0.0", "--port", "8001"]
+CMD ["sh", "-c", "uvicorn app:app --host 0.0.0.0 --port ${PORT:-8080}"]
