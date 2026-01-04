@@ -11,3 +11,19 @@ sensor-dashboard/dist/
 sensor-dashboard/build/
 # Virtual environments
 .venv
+
+.venv/
+__pycache__/
+.git/
+
+sensor-dashboard/node_modules/
+sensor-dashboard/dist/
+sensor-dashboard/build/
+
+cmaps-jet-engine-simulated-data/
+cmaps-jet-engine-simulated-data.zip
+
+*.ipynb
+*.png
+
+data/
