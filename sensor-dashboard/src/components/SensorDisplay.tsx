@@ -1,4 +1,3 @@
-import { LineChart, Line, ResponsiveContainer } from 'recharts';
 
 interface SensorDisplayProps {
     value: number;
