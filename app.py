@@ -111,16 +111,10 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-@app.get("/{full_path:path}")
-async def spa_fallback(full_path: str):
-    index_file = static_dir / "index.html"
-    if index_file.exists():
-        return FileResponse(index_file)
-    raise HTTPException(status_code=404, detail="Frontend not built")
 
 
-@app.post("/predict_onnx/")
-async def predict_rul_onnx(request: Request, payload: EngineRequest):
+@app.post("/predict/")
+async def predict(request: Request, payload: EngineRequest):
     import onnxruntime as ort
     import numpy as np
 
@@ -193,3 +187,10 @@ async def list_engines(request: Request):
     df = request.app.state.sensor_df
     engine_ids = df["unit_nr"].unique().tolist()
     return engine_ids
+
+@app.get("/{full_path:path}")
+async def spa_fallback(full_path: str):
+    index_file = static_dir / "index.html"
+    if index_file.exists():
+        return FileResponse(index_file)
+    raise HTTPException(status_code=404, detail="Frontend not built")
