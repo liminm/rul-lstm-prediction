@@ -13,12 +13,6 @@ from pathlib import Path
 from fastapi.staticfiles import StaticFiles
 from starlette.responses import FileResponse
 
-#input_size = 24 # Sensors (21) + Settings (3)
-#model = EngineRULPredictor(input_size=input_size, hidden_size=512, num_layers=2, dropout=0.2)
-
-#model.load_state_dict(torch.load('models/lstm_model.pth', map_location=torch.device('cpu')))
-
-#model.eval()
 model_path = 'models/lstm_model.pth'
 
 static_dir = Path(__file__).parent / "static"
@@ -93,9 +87,6 @@ async def lifespan(app: FastAPI):
 
 # We pass the lifespan function to the FastAPI app
 app = FastAPI(lifespan=lifespan)
-
-if static_dir.exists():
-    app.mount("/", StaticFiles(directory=static_dir, html=True), name="static")
 
 
 origins = [
@@ -188,9 +179,27 @@ async def list_engines(request: Request):
     engine_ids = df["unit_nr"].unique().tolist()
     return engine_ids
 
+static_dir = Path(__file__).parent / "static"
+
+if static_dir.exists():
+    assets_dir = static_dir / "assets"
+    if assets_dir.exists():
+        app.mount("/assets", StaticFiles(directory=assets_dir), name="assets")
+
+@app.get("/vite.svg")
+async def vite_svg():
+    svg = static_dir / "vite.svg"
+    if svg.exists():
+        return FileResponse(svg)
+    raise HTTPException(status_code=404, detail="Not found")
+
 @app.get("/{full_path:path}")
 async def spa_fallback(full_path: str):
+    if full_path.startswith(("engines", "sensors", "predict", "docs", "openapi.json")):
+        raise HTTPException(status_code=404, detail="Not found")
+
     index_file = static_dir / "index.html"
     if index_file.exists():
         return FileResponse(index_file)
+
     raise HTTPException(status_code=404, detail="Frontend not built")
