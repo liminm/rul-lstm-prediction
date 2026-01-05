@@ -2,6 +2,7 @@ from typing import List
 
 
 from pydantic import BaseModel, Field
+import numpy as np
 import pandas as pd
 from contextlib import asynccontextmanager
 from fastapi import FastAPI, Request, Query, HTTPException
@@ -15,7 +16,8 @@ from starlette.responses import FileResponse
 
 from predict import run_onnx_rul_inference
 
-model_path = 'models/lstm_model.pth'
+#model_path = 'models/lstm_model.pth'
+model_path = "models/lstm_model.onnx"
 
 static_dir = Path(__file__).parent / "static"
 
@@ -81,6 +83,38 @@ async def lifespan(app: FastAPI):
     raw_df = pd.read_csv("data/test_FD001.txt", sep=r"\s+", header=None, names=col_names)
     app.state.sensor_df = raw_df
 
+    train_df = pd.read_csv("data/train_FD001.txt", sep=r"\s+", header=None, names=col_names)
+    max_cycle = train_df.groupby("unit_nr")["time_cycles"].max().rename("max_cycle")
+    train_df = train_df.merge(max_cycle, left_on="unit_nr", right_index=True)
+    train_df["RUL"] = train_df["max_cycle"] - train_df["time_cycles"]
+    rul_values = train_df["RUL"].to_numpy(dtype=float)
+
+    if rul_values.size > 0:
+        rul_sorted = np.sort(rul_values)
+        app.state.rul_dist = rul_sorted
+        app.state.rul_stats = {
+            "min": float(np.min(rul_values)),
+            "max": float(np.max(rul_values)),
+            "p20": float(np.percentile(rul_values, 20)),
+            "p50": float(np.percentile(rul_values, 50)),
+            "p80": float(np.percentile(rul_values, 80)),
+        }
+    else:
+        app.state.rul_dist = np.array([])
+        app.state.rul_stats = {
+            "min": None,
+            "max": None,
+            "p20": None,
+            "p50": None,
+            "p80": None,
+        }
+
+    app.state.train_cycle_stats = {
+        "median": float(max_cycle.median()),
+        "mean": float(max_cycle.mean()),
+        "max": float(max_cycle.max()),
+    }
+
 
     yield  # This separates startup from shutdown
     
@@ -107,11 +141,15 @@ app.add_middleware(
 
 @app.post("/predict/", response_model=dict)
 async def predict(request: Request, payload: EngineRequest):
-    scaled_prediction, raw_prediction = run_onnx_rul_inference(request, payload)
+    scaled_prediction, raw_prediction, true_rul, context = run_onnx_rul_inference(
+        request, payload, model_path
+    )
     return {
         "predicted_rul": scaled_prediction,
         "prediction_raw": raw_prediction,
+        "true_rul": true_rul,
         "unit_nr": payload.unit_nr,
+        "context": context,
     }
 
 
