@@ -16,7 +16,6 @@ from starlette.responses import FileResponse
 
 from predict import run_onnx_rul_inference
 
-#model_path = 'models/lstm_model.pth'
 model_path = "models/lstm_model.onnx"
 
 static_dir = Path(__file__).parent / "static"
@@ -66,7 +65,7 @@ class EngineRequest(BaseModel):
 async def lifespan(app: FastAPI):
     # 1. Startup logic goes here
     print("Loading model...")
-    input_size = 18 # Sensors (21) + Settings (3)
+    input_size = 16 # Sensors (14) + Settings (2)
 
     #model = RulLstm(n_features=input_size, hidden_size=128, num_layers=2, dropout=0.2)
 
