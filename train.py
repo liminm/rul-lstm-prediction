@@ -319,14 +319,27 @@ def export_onnx(
     batch_size: int,
     opset: int,
 ) -> None:
-    model.to("cpu")
-    model.eval()
+    class OnnxExportWrapper(nn.Module):
+        def __init__(self, base_model: nn.Module):
+            super().__init__()
+            self.lstm = base_model.lstm
+            self.head = base_model.head
+
+        def forward(self, padded: torch.Tensor, lengths: torch.Tensor) -> torch.Tensor:
+            out, _ = self.lstm(padded)
+            lengths = torch.clamp(lengths - 1, min=0)
+            idx = lengths.view(-1, 1, 1).expand(-1, 1, out.size(2))
+            last = out.gather(1, idx).squeeze(1)
+            return self.head(last).squeeze(1)
+
+    export_model = OnnxExportWrapper(model).to("cpu")
+    export_model.eval()
 
     x = torch.randn(batch_size, seq_len, feature_count)
     lengths = torch.full((batch_size,), seq_len, dtype=torch.long)
 
     torch.onnx.export(
-        model,
+        export_model,
         (x, lengths),
         output_path.as_posix(),
         input_names=["input", "lengths"],
