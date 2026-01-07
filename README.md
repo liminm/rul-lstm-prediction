@@ -20,8 +20,8 @@ Airline and fleet operators need to decide **when to service an engine before fa
 - NASA CMAPSS (Commercial Modular Aero-Propulsion System Simulation) turbofan engine degradation data.
 - Each row is one engine cycle with 3 operational settings and 21 sensor measurements.
 - Training labels are computed as `max_cycle - time_cycles`; test labels come from `RUL_FD00*.txt`.
-- Data is included in `data/` (train/test/RUL text files and `CMAPSSData.zip`).
-- The notebook trains on FD001 + FD003 by default; the API currently uses FD001 test data.
+- Data will be downloaded into `data/` via notebook or script (train/test/RUL text files and `CMAPSSData.zip`).
+- The notebook trains on FD001 by default; the API currently uses FD001 test data.
 
 ## Dataset details
 - CMAPSS provides multiple subsets (FD001–FD004) with different operating conditions and fault modes.
