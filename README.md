@@ -5,7 +5,13 @@ Predict remaining useful life (RUL) of turbofan engines from multivariate sensor
 Deployed app: https://rul-app-99998513528.europe-west3.run.app/
 
 ![App demo](assets/app-demo.gif)
+Caption: Select an engine, run a prediction, and compare predicted vs. true RUL.
+
 ![App demo](assets/app-demo-2.gif)
+Caption: Click a sensor card to open the detailed chart with latest/avg/min/max stats.
+
+![App demo](assets/app-demo-3.gif)
+Caption: Use the `/docs` API UI to call `/predict/` by providing a `unit_nr`.
 
 ## Problem description
 Airline and fleet operators need to decide **when to service an engine before failure** based on evolving sensor readings. Each engine operates for many cycles, and sensor patterns gradually degrade as components wear out. The task is to **predict remaining useful life (RUL)** in cycles so maintenance can be scheduled ahead of time, minimizing downtime and avoiding catastrophic failures. The output is a numeric estimate of cycles remaining, plus context (true RUL and delta) to interpret whether the model is over‑ or under‑estimating.
