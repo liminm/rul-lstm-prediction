@@ -34,9 +34,11 @@ Predict remaining useful life (RUL) of turbofan engines from multivariate sensor
 - `Dockerfile` - builds UI and serves API.
 
 ## Results and model selection
-- Final metrics (reported in cycles): add your latest MAE/RMSE from the notebook evaluation.
-- Model selection: include a short summary of variants tried and why the final LSTM configuration was chosen.
-- Best hyperparameters are logged in `tuning_results.txt`.
+- Latest test metrics (cycles): **MAE = TODO**, **RMSE = TODO** (copy from the notebook evaluation cell).
+- Model selection: LSTM variants are compared across hidden size, layers, dropout, learning rate, weight decay, and batch size. The final model is chosen by lowest validation loss.
+- Best hyperparameters (latest sweep) are logged in `tuning_results.txt` (example trial):
+  `hidden_size=64`, `num_layers=2`, `dropout=0.3`, `lr=0.001`, `weight_decay=0.0`, `batch_size=16`, `samples_per_epoch=60000`, `l_min=30`, `l_max=200`.
+- Targets are **not normalized** in `train.py`, so metrics are in raw **cycles**.
 
 ## Setup
 ### 1) Python virtual environment
@@ -126,6 +128,7 @@ Dashboard flow:
 API docs:
 - Interactive Swagger docs are available at `/docs` on the running service (e.g., `http://localhost:8080/docs` or your Cloud Run URL + `/docs`).
 - The docs list all endpoints and allow you to submit predictions directly from the browser.
+- Deployed docs URL: https://rul-app-99998513528.europe-west3.run.app/docs (try `POST /predict/` there).
 
 Web service deployment notes:
 - The backend is a FastAPI service (Flask-like API) and can be run locally or in Docker.
