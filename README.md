@@ -26,6 +26,15 @@ Airline and fleet operators need to decide **when to service an engine before fa
 - Export the best model to `models/lstm_model.pth` and `models/lstm_model.onnx`.
 - Serve predictions via a FastAPI web service (similar to Flask).
 
+## Application architecture
+- **Data layer**: CMAPSS files in `data/` (train/test/RUL). `train.py` computes RUL labels and fits the scaler on the training split.
+- **Notebook layer**: `notebook.ipynb` is the source of truth for EDA, feature selection, and training logic; `train.py` mirrors it.
+- **Model layer**: PyTorch LSTM trained on variable-length sequences, exported to ONNX for inference (`models/lstm_model.onnx`).
+- **Inference helper**: `predict.py` handles ONNX preprocessing and model invocation used by the API.
+- **API layer**: FastAPI (`app.py`) loads ONNX + scaler and exposes `/predict`, `/sensors`, and `/engines`. Inference runs with ONNX Runtime.
+- **Frontend**: React dashboard (`sensor-dashboard/`) calls the API to render sensor traces and RUL predictions.
+- **Deployment**: Single Docker image builds the frontend and serves it with the API; the same image runs locally or on Cloud Run.
+
 ## Why an LSTM
 - Sensor readings are **sequences over time**, and RUL depends on degradation trends rather than a single snapshot.
 - LSTMs capture temporal dependencies and work well with **variable‑length trajectories**.
@@ -199,6 +208,12 @@ gcloud auth configure-docker YOUR_REGION-docker.pkg.dev
 docker build -t YOUR_REGION-docker.pkg.dev/YOUR_PROJECT_ID/rul-repo/rul-app:latest .
 docker push YOUR_REGION-docker.pkg.dev/YOUR_PROJECT_ID/rul-repo/rul-app:latest
 ```
+
+One-command deploy (script):
+```
+bash scripts/deploy_cloud_run.sh
+```
+Edit the script if you need a different project, region, repo, or service name.
 
 Deploy to Cloud Run:
 ```
