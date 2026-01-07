@@ -8,7 +8,7 @@ import pandas as pd
 from fastapi import FastAPI, HTTPException, Query, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from starlette.responses import FileResponse
 
 from predict import run_onnx_rul_inference
@@ -52,7 +52,7 @@ class EngineData(BaseModel):
 
 
 class EngineRequest(BaseModel):
-    unit_nr: int
+    unit_nr: int = Field(1, ge=1)
 
 
 @asynccontextmanager
