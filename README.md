@@ -61,10 +61,10 @@ To improve generalization, the training loader uses **random temporal crops**:
 - `notebook.ipynb` - end-to-end EDA + training pipeline.
 - `nasa_jet_engine_predictive_maintenance.ipynb` - additional exploration.
 - `train.py` - training + tuning script (mirrors the notebook flow).
-- `predict.py` - ONNX inference helper.
+- `predict.py` - ONNX inference helper (preprocessing + model call).
 - `model.py` - PyTorch LSTM model.
 - `dataset.py` - datasets + random-crop loader.
-- `app.py` - FastAPI inference API (ONNX Runtime).
+- `app.py` - FastAPI inference API (the actual web service).
 - `models/` - model weights, ONNX export, scaler.
 - `sensor-dashboard/` - React dashboard for engine and sensor plots.
 - `requirements.txt` - full Python dependencies.
