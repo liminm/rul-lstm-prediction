@@ -41,7 +41,7 @@ FEATURES_TO_DROP = [
     "fd",
 ]
 
-EPOCHS = 15
+EPOCHS = 30
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 
@@ -474,10 +474,10 @@ def run_train(
     search_space = {
         "hidden_size": [64],
         "num_layers": [2],
-        "dropout": [0.3],
-        "lr": [1e-3],
-        "weight_decay": [0.0],
-        "batch_size": [16],
+        "dropout": [0.0],
+        "lr": [2e-3],
+        "weight_decay": [0.0001],
+        "batch_size": [32],
         "samples_per_epoch": [60000],
         "l_min": [30],
         "l_max": [200],
