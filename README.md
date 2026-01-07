@@ -2,12 +2,20 @@
 
 Predict remaining useful life (RUL) of turbofan engines from multivariate sensor telemetry. The goal is to estimate how many cycles remain before failure so maintenance can be scheduled proactively.
 
+## Problem description
+Airline and fleet operators need to decide **when to service an engine before failure** based on evolving sensor readings. Each engine operates for many cycles, and sensor patterns gradually degrade as components wear out. The task is to **predict remaining useful life (RUL)** in cycles so maintenance can be scheduled ahead of time, minimizing downtime and avoiding catastrophic failures. The output is a numeric estimate of cycles remaining, plus context (true RUL and delta) to interpret whether the model is over‑ or under‑estimating.
+
 ## Dataset
 - NASA CMAPSS (Commercial Modular Aero-Propulsion System Simulation) turbofan engine degradation data.
 - Each row is one engine cycle with 3 operational settings and 21 sensor measurements.
 - Training labels are computed as `max_cycle - time_cycles`; test labels come from `RUL_FD00*.txt`.
 - Data is included in `data/` (train/test/RUL text files and `CMAPSSData.zip`).
 - The notebook trains on FD001 + FD003 by default; the API currently uses FD001 test data.
+
+## Dataset details
+- CMAPSS provides multiple subsets (FD001–FD004) with different operating conditions and fault modes.
+- Each unit (engine) is a **run‑to‑failure trajectory**; `time_cycles` is the cycle index.
+- The model is trained on full trajectories and predicts RUL for a given unit based on its sensor history.
 
 ## Approach
 - Clean and merge CMAPSS subsets, compute RUL labels, and split by engine id.
@@ -190,6 +198,3 @@ docker push YOUR_REGION-docker.pkg.dev/YOUR_PROJECT_ID/rul-repo/rul-app:latest
 ## Notes
 - The API reads `data/test_FD001.txt`. To serve other subsets, update the file path in `app.py` and retrain/export the model if needed.
 - The API rescales the normalized output by `max_rul = 542` (see `app.py`).
-
-## References
-- A. Saxena, K. Goebel, D. Simon, and N. Eklund, "Damage Propagation Modeling for Aircraft Engine Run-to-Failure Simulation", PHM 2008.
